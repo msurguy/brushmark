@@ -1,6 +1,6 @@
 {
   "name": "brushmark",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Animated painterly brush-stroke annotations for text on the web. p5.brush rendering, rough-notation ergonomics, GSAP timing.",
   "repository": {
     "type": "git",
