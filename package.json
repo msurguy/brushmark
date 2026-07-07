@@ -43,7 +43,8 @@
     "build:lib": "vite build --mode lib",
     "typecheck": "tsc --noEmit",
     "test:p5brush": "vitest run --config vendor/p5.brush/vitest.config.js",
-    "prepublishOnly": "npm run typecheck && npm run test:p5brush && npm run build:lib"
+    "prepublishOnly": "npm run typecheck && npm run test:p5brush && npm run build:lib",
+    "postversion": "git push --follow-tags"
   },
   "peerDependencies": {
     "animejs": ">=4",
