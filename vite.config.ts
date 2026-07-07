@@ -69,12 +69,16 @@ export default defineConfig(({ mode }) => {
   return {
     ...common,
     root: resolve(__dirname, "demo"),
+    // GitHub Pages serves the demo from /brushmark/ — the deploy workflow
+    // sets DEMO_BASE; local dev/build stay at "/".
+    base: process.env.DEMO_BASE || "/",
     build: {
       // Demo only: the engine switcher uses top-level await for dynamic
       // adapter imports.
       target: "es2022",
       rollupOptions: {
         input: {
+          index: resolve(__dirname, "demo/index.html"),
           vanilla: resolve(__dirname, "demo/vanilla/index.html"),
           react: resolve(__dirname, "demo/react/index.html"),
         },
