@@ -8,6 +8,7 @@ import {
   type AnnotationType,
   type BrushAnnotation,
 } from "brushmark";
+import { RECIPES, recipeConfig, recipeShown } from "./recipes";
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) =>
   document.querySelector(sel) as T;
@@ -73,6 +74,127 @@ const ledeHighlight = annotate($("#lede-highlight"), {
 });
 void heroContour.show();
 void ledeHighlight.show();
+
+// ---------------------------------------------------------------------------
+// Recipes — every card shows the exact annotate() call that paints its preview.
+// The config is stored once as an object-literal string: the displayed code is
+// derived from it and the live preview is executed from the SAME string, so the
+// two can never drift.
+// ---------------------------------------------------------------------------
+
+// Load highlight.js from the CDN as a plain <script> (UMD → window.hljs) so
+// Vite never tries to resolve it; degrade to plain monospace if it fails.
+type Hljs = { highlightElement: (el: HTMLElement) => void };
+const hljs = await new Promise<Hljs | null>((resolve) => {
+  const w = window as unknown as { hljs?: Hljs };
+  if (w.hljs) return resolve(w.hljs);
+  const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/highlight.min.js";
+  s.onload = () => resolve(w.hljs ?? null);
+  s.onerror = () => resolve(null);
+  document.head.appendChild(s);
+});
+
+const recipeGrid = $("#recipe-grid");
+
+for (const recipe of RECIPES) {
+  const card = document.createElement("div");
+  card.className = "recipe";
+  card.innerHTML = `
+    <div class="preview">
+      <span class="recipe-title">${recipe.title}</span>
+      <span class="target">${recipe.text}</span>
+      <div class="recipe-actions">
+        <button class="replay-one">Replay</button>
+        <button class="copy">Copy</button>
+      </div>
+    </div>
+    <div class="code"><pre><code class="language-typescript"></code></pre></div>
+  `;
+  recipeGrid.appendChild(card);
+
+  const codeEl = card.querySelector("code") as HTMLElement;
+  const source = recipeShown(recipe);
+  codeEl.textContent = source;
+  hljs?.highlightElement(codeEl);
+
+  const target = card.querySelector(".target") as HTMLElement;
+  const annotation = annotate(target, recipeConfig(recipe));
+  void annotation.show();
+
+  card.querySelector(".replay-one")!.addEventListener("click", () => {
+    void annotation.hide("instant").then(() => annotation.show());
+  });
+
+  const copyBtn = card.querySelector(".copy") as HTMLButtonElement;
+  copyBtn.addEventListener("click", () => {
+    void navigator.clipboard.writeText(source).then(() => {
+      copyBtn.textContent = "Copied!";
+      copyBtn.classList.add("copied");
+      setTimeout(() => {
+        copyBtn.textContent = "Copy";
+        copyBtn.classList.remove("copied");
+      }, 1200);
+    });
+  });
+}
+
+// Sequencing recipe — annotationGroup chains child timelines into one master.
+const sequenceContainer = $("#recipe-sequence");
+const SEQUENCE_CODE = `import { annotate, annotationGroup } from "brushmark";
+
+const group = annotationGroup([
+  annotate(one,   { type: "underline",      brush: { name: "pen",     color: "#c93030" } }),
+  annotate(two,   { type: "highlight",      brush: { name: "marker",  color: "#f2c94c" } }),
+  annotate(three, { type: "strike-through", brush: { name: "2B",      color: "#c93030" } }),
+], { overlap: 0.15 });
+
+group.show();                 // plays the children one after another
+group.timeline.progress(0.5); // …or scrub the master timeline`;
+
+sequenceContainer.innerHTML = `
+  <div class="preview">
+    <span class="recipe-title">Sequencing (annotationGroup)</span>
+    <p>First <span id="rseq-1">gather the pigments</span>, then
+      <span id="rseq-2">lay down the wash</span>, and finally
+      <span id="rseq-3">cross out the doubts</span>.</p>
+    <div class="recipe-actions">
+      <button class="replay-one" id="rseq-play">Replay</button>
+      <button class="copy" id="rseq-copy">Copy</button>
+    </div>
+  </div>
+  <div class="code"><pre><code class="language-typescript"></code></pre></div>
+`;
+
+const seqCodeEl = sequenceContainer.querySelector("code") as HTMLElement;
+seqCodeEl.textContent = SEQUENCE_CODE;
+hljs?.highlightElement(seqCodeEl);
+
+const recipeSequence = annotationGroup(
+  [
+    annotate($("#rseq-1"), { type: "underline", brush: { name: "pen", color: "#c93030" }, duration: 0.7 }),
+    annotate($("#rseq-2"), { type: "highlight", brush: { name: "marker", color: "#f2c94c" }, duration: 0.9 }),
+    annotate($("#rseq-3"), { type: "strike-through", brush: { name: "2B", color: "#c93030" }, duration: 0.7 }),
+  ],
+  { overlap: 0.15 },
+);
+void recipeSequence.show();
+
+$("#rseq-play").addEventListener("click", () => {
+  recipeSequence.hide();
+  void recipeSequence.show();
+});
+const rseqCopy = $("#rseq-copy") as HTMLButtonElement;
+rseqCopy.addEventListener("click", () => {
+  void navigator.clipboard.writeText(SEQUENCE_CODE).then(() => {
+    rseqCopy.textContent = "Copied!";
+    rseqCopy.classList.add("copied");
+    setTimeout(() => {
+      rseqCopy.textContent = "Copy";
+      rseqCopy.classList.remove("copied");
+    }, 1200);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Types showcase

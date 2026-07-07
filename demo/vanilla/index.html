@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>brushmark — painterly text annotations</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/styles/github.min.css"
+    />
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
@@ -24,6 +31,17 @@
         </p>
         <p><a class="react-link" href="../react/index.html">→ React demo</a></p>
       </header>
+
+      <section id="recipes">
+        <h2>Recipes — copy-paste code</h2>
+        <p class="note">
+          Every card is a working <code>annotate()</code> call. The code you see is
+          exactly what paints the preview beside it — copy it, drop in your own
+          element, done.
+        </p>
+        <div id="recipe-grid"></div>
+        <div id="recipe-sequence"></div>
+      </section>
 
       <section id="types">
         <h2>Annotation types</h2>

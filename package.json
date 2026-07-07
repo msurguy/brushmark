@@ -43,6 +43,7 @@
     "build:lib": "vite build --mode lib",
     "typecheck": "tsc --noEmit",
     "test:p5brush": "vitest run --config vendor/p5.brush/vitest.config.js",
+    "capture": "node scripts/capture.mjs",
     "prepublishOnly": "npm run typecheck && npm run test:p5brush && npm run build:lib",
     "postversion": "git push --follow-tags"
   },
@@ -68,6 +69,7 @@
     "@vitejs/plugin-react": "^4.3.0",
     "animejs": "^4.5.0",
     "gsap": "^3.12.5",
+    "playwright": "^1.61.1",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "simplex-noise": "^4.0.3",

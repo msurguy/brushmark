@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>brushmark — capture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
+    <style>
+      :root { --paper: #faf6ef; --ink: #26221c; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--paper); }
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      /* The element the capture script screenshots — generous padding so
+         contour inflation / highlight bleed is never clipped. */
+      #capture-frame {
+        background: var(--paper);
+        padding: 48px 64px;
+        border-radius: 12px;
+      }
+      #capture-target {
+        font-family: "Patrick Hand", "Bradley Hand", cursive;
+        font-size: 46px;
+        color: var(--ink);
+        line-height: 1.5;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="capture-frame">
+      <span id="capture-target"></span>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

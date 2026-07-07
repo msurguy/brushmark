@@ -3,6 +3,8 @@
   --paper: #faf6ef;
   --accent: #c93030;
   --muted: #8a8377;
+  /* Handwriting face for the *annotated* text only (not the UI chrome). */
+  --hand: "Patrick Hand", "Bradley Hand", "Segoe Print", cursive;
 }
 
 * { box-sizing: border-box; }
@@ -41,6 +43,24 @@ h1 {
 }
 
 .lede { font-size: 19px; max-width: 60ch; }
+
+/* Handwriting on the annotated text only — Patrick Hand runs small, so nudge
+   size/line-height up wherever it applies. UI chrome keeps its system fonts. */
+#hero-target,
+#lede-highlight,
+.type-grid .target,
+.gallery .cell,
+.contour-text,
+.responsive-text,
+.lab-stage p,
+.seq-text,
+.wc-text,
+.recipe .target {
+  font-family: var(--hand);
+  letter-spacing: 0.01em;
+}
+#hero-target { font-size: 1.05em; }
+#lede-highlight { font-size: 1.1em; }
 
 .react-link { color: var(--accent); }
 
@@ -177,4 +197,95 @@ button:hover { background: #443d33; }
   gap: 14px 22px;
   margin-top: 24px;
   font-size: 15px;
+}
+
+/* --- Recipes: code + live preview ---------------------------------------- */
+
+#recipe-grid {
+  display: grid;
+  gap: 22px;
+  margin-top: 30px;
+}
+
+.recipe {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  border: 1px solid #e9e0cf;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fffdf8;
+}
+
+@media (min-width: 720px) {
+  .recipe { grid-template-columns: 1fr 1fr; }
+}
+
+.recipe .preview {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 30px 28px;
+  border-bottom: 1px solid #f0e8d8;
+}
+
+@media (min-width: 720px) {
+  .recipe .preview { border-bottom: none; border-right: 1px solid #f0e8d8; }
+}
+
+.recipe .recipe-title {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.recipe .target { font-size: 24px; line-height: 1.5; }
+
+.recipe .recipe-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.recipe .recipe-actions button {
+  margin-top: 0;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.recipe .recipe-actions button.copy.copied { background: var(--accent); }
+
+.recipe .code { position: relative; margin: 0; }
+
+.recipe pre {
+  margin: 0;
+  height: 100%;
+  overflow: auto;
+  padding: 20px 22px;
+  background: #f7f2e8;
+  font: 12.5px/1.6 "SF Mono", ui-monospace, Menlo, monospace;
+}
+
+.recipe pre code { font: inherit; background: none; padding: 0; }
+
+#recipe-sequence {
+  margin-top: 26px;
+  border: 1px solid #e9e0cf;
+  border-radius: 10px;
+  background: #fffdf8;
+  overflow: hidden;
+}
+
+#recipe-sequence .preview { padding: 26px 28px; }
+#recipe-sequence .preview p { margin: 0; font-size: 22px; }
+#recipe-sequence pre {
+  margin: 0;
+  overflow: auto;
+  padding: 20px 22px;
+  background: #f7f2e8;
+  font: 12.5px/1.6 "SF Mono", ui-monospace, Menlo, monospace;
+  border-top: 1px solid #f0e8d8;
 }

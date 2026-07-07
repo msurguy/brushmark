@@ -22,6 +22,47 @@ It combines three engines:
   [GSAP](https://gsap.com) and [Anime.js](https://animejs.com) v4 are one
   import away.
 
+## See it
+
+Real animated brush strokes drawn over live DOM text (the text stays selectable
+and responsive — these are just the painted overlays revealing in):
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="./assets/underline.gif" alt="Animated underline stroke" width="400" /><br />
+      <sub><code>type: "underline"</code></sub>
+    </td>
+    <td align="center">
+      <img src="./assets/highlight.gif" alt="Animated marker highlight" width="400" /><br />
+      <sub><code>type: "highlight"</code> · marker</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./assets/circle.gif" alt="Animated hand-drawn circle" width="400" /><br />
+      <sub><code>type: "circle"</code> · <code>iterations: 2</code></sub>
+    </td>
+    <td align="center">
+      <img src="./assets/contour.gif" alt="Animated hand-drawn contour hull" width="400" /><br />
+      <sub><code>type: "contour"</code></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./assets/watercolor.gif" alt="Animated watercolor highlight wash" width="400" /><br />
+      <sub><code>highlightStyle: "watercolor"</code></sub>
+    </td>
+    <td align="center">
+      <img src="./assets/word-stagger.gif" alt="Underline revealing word by word" width="400" /><br />
+      <sub><code>stagger: { by: "word" }</code></sub>
+    </td>
+  </tr>
+</table>
+
+The live demo has a **Recipes** section pairing every effect with the exact,
+copy-pasteable `annotate()` call that produced it — see [Demos](#demos).
+
 ## Install
 
 ```bash
@@ -222,10 +263,23 @@ registerBrush("my-ink", { type: "custom", weight: 0.9, vibration: 0.14, /* … *
 
 ```bash
 npm run dev
-# → /vanilla/index.html  (types, brush gallery, contour, animation lab,
-#                         responsive, sequencing/scrub, watercolor, stress test;
+# → /vanilla/index.html  (recipes: code + live preview, types, brush gallery,
+#                         contour, animation lab, responsive, sequencing/scrub,
+#                         watercolor, stress test;
 #                         engine switcher: ?engine=builtin|gsap|anime)
 # → /react/index.html    (components, hooks, groups, timeline adoption; StrictMode)
+```
+
+The **Recipes** section on the vanilla page pairs each effect with the exact
+`annotate()` call that paints it — copy the snippet, drop in your own element.
+
+The README GIFs above are generated from those same recipes by
+`scripts/capture.mjs` (requires the dev server running plus `ffmpeg` and a
+dev-only `playwright` install):
+
+```bash
+npm run dev &                                   # serve the capture page
+BASE=http://localhost:5173 node scripts/capture.mjs
 ```
 
 ## License
