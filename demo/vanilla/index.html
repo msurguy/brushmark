@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>brushmark — painterly text annotations</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <p class="eyebrow">brushmark · p5.brush × rough-notation</p>
+        <div class="controls-row" id="engine-switch">
+          <span class="label">animation engine:</span>
+          <button data-engine="builtin">Built-in</button>
+          <button data-engine="gsap">GSAP</button>
+          <button data-engine="anime">Anime.js</button>
+        </div>
+        <h1>Annotate the web with <span id="hero-target">real brushes</span></h1>
+        <p class="lede">
+          brushmark draws animated, hand-painted annotations over ordinary DOM text —
+          <span id="lede-highlight">watercolor, graphite, marker and spray</span> — while the text
+          itself stays selectable, responsive CSS text.
+        </p>
+        <p><a class="react-link" href="../react/index.html">→ React demo</a></p>
+      </header>
+
+      <section id="types">
+        <h2>Annotation types</h2>
+        <div class="type-grid" id="type-grid"></div>
+        <button class="replay" id="replay-types">Replay</button>
+      </section>
+
+      <section id="brush-gallery">
+        <h2>Brush gallery</h2>
+        <p class="note">Every p5.brush built-in, plus a custom registered brush — same underline, different tool.</p>
+        <div class="gallery" id="gallery"></div>
+        <button class="replay" id="replay-gallery">Replay</button>
+      </section>
+
+      <section id="contour-section">
+        <h2>Smart contour</h2>
+        <p class="note">
+          The contour follows the actual union of the wrapped line boxes — resize the panel below
+          and replay.
+        </p>
+        <div class="resizable" id="contour-box">
+          <p class="contour-text" id="contour-target">A smooth hand-drawn outline hugging every
+            wrapped line of this paragraph, however the text happens to flow at this width.</p>
+        </div>
+        <button class="replay" id="replay-contour">Replay</button>
+      </section>
+
+      <section id="lab">
+        <h2>Animation lab</h2>
+        <div class="lab-controls">
+          <label>type
+            <select id="lab-type">
+              <option>underline</option><option>highlight</option><option>box</option>
+              <option>circle</option><option>contour</option><option>strike-through</option>
+              <option>crossed-off</option><option>bracket</option>
+            </select>
+          </label>
+          <label>brush <select id="lab-brush"></select></label>
+          <label>color <input type="color" id="lab-color" value="#c93030" /></label>
+          <label>weight <input type="range" id="lab-weight" min="0.3" max="4" step="0.1" value="1" /></label>
+          <label>duration <input type="range" id="lab-duration" min="0.2" max="4" step="0.1" value="1" /></label>
+          <label>ease
+            <select id="lab-ease">
+              <option>power2.out</option><option>power1.inOut</option><option>none</option>
+              <option>expo.out</option><option>back.out(1.7)</option><option>elastic.out(1, 0.4)</option>
+              <option>steps(12)</option>
+            </select>
+          </label>
+          <label>direction
+            <select id="lab-direction"><option>ltr</option><option>rtl</option><option>center-out</option></select>
+          </label>
+          <label>stagger
+            <select id="lab-stagger"><option value="">none</option><option value="line">by line</option><option value="word">by word</option></select>
+          </label>
+          <label>iterations <input type="range" id="lab-iterations" min="1" max="3" step="1" value="1" /></label>
+          <label>wiggle <input type="range" id="lab-wiggle" min="0" max="3" step="0.1" value="0" /></label>
+          <label><input type="checkbox" id="lab-yoyo" /> loop (yoyo)</label>
+          <button id="lab-run">Draw</button>
+          <button id="lab-reverse">Un-draw</button>
+          <button id="lab-seed">Re-roll seed</button>
+        </div>
+        <div class="lab-stage">
+          <p id="lab-target">The quick brown fox jumps over the lazy dog, then pauses to admire
+            the wet paint drying on this very sentence before jumping again.</p>
+        </div>
+      </section>
+
+      <section id="responsive">
+        <h2>Responsive</h2>
+        <p class="note">Drag the handle — annotations re-measure, re-render at the new wrap, and keep
+          their animation progress. Font size scales stroke weight.</p>
+        <div class="controls-row">
+          <button data-font="14">14px</button>
+          <button data-font="18">18px</button>
+          <button data-font="26">26px</button>
+        </div>
+        <div class="resizable" id="responsive-box">
+          <p class="responsive-text" id="responsive-target">Painted annotations that survive любой
+            reflow: squeeze this panel and the highlight re-wraps with the text, line by line,
+            without losing its place in the animation.</p>
+        </div>
+      </section>
+
+      <section id="sequence">
+        <h2>Sequencing &amp; GSAP timelines</h2>
+        <p class="note">Three annotations adopted into one master timeline, then scrub it.</p>
+        <p class="seq-text">First we <span id="seq-1">sketch the idea</span>, then we
+          <span id="seq-2">paint over the details</span>, and finally we
+          <span id="seq-3">cross out the doubts</span>.</p>
+        <div class="controls-row">
+          <button id="seq-play">Play</button>
+          <input type="range" id="seq-scrub" min="0" max="1" step="0.001" value="0" />
+        </div>
+      </section>
+
+      <section id="watercolor">
+        <h2>Watercolor &amp; hatch — permutations</h2>
+        <p class="note">Watercolor washes (bleed, texture, opacity), shape fills, and hatching
+          (distance, angle, randomness, hatch brush) — every combination is just config.</p>
+        <h3>Watercolor highlight</h3>
+        <div class="gallery wc-gallery" id="wc-wash-gallery"></div>
+        <h3>Watercolor-filled shapes</h3>
+        <div class="gallery wc-gallery" id="wc-shape-gallery"></div>
+        <h3>Hatching</h3>
+        <div class="gallery wc-gallery" id="wc-hatch-gallery"></div>
+        <h3>Combinations</h3>
+        <div class="gallery wc-gallery" id="wc-combo-gallery"></div>
+        <button class="replay" id="replay-wc">Replay</button>
+      </section>
+
+      <section id="stress">
+        <h2>Stress test — one WebGL context</h2>
+        <p class="note">
+          <span id="stress-count">0</span> annotations, <span id="gl-count">?</span> WebGL context(s).
+        </p>
+        <div id="stress-grid" class="stress-grid"></div>
+        <button class="replay" id="replay-stress">Draw all</button>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
