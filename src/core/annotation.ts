@@ -68,7 +68,8 @@ export class BrushAnnotationImpl implements BrushAnnotation {
     this.overlay = createOverlay(el);
     this.engine = getAnimationEngine();
     this.timeline = createTimeline(this.config, this.engine);
-    this.stopObserving = observeLayout(el, () => this.onLayoutChange());
+    this.stopObserving =
+      config.observe === false ? () => {} : observeLayout(el, () => this.onLayoutChange());
   }
 
   // -- lifecycle ------------------------------------------------------------
@@ -198,6 +199,11 @@ export class BrushAnnotationImpl implements BrushAnnotation {
     }
   }
 
+  /** Run a layout read under the host's `measure` hook (if any). */
+  private measured<T>(run: () => T): T {
+    return this.config.measure ? this.config.measure(run) : run();
+  }
+
   private toRelative(lines: LineRect[]): LineRect[] {
     const origin = this.element.getBoundingClientRect();
     return lines.map((l) => ({ x: l.x - origin.left, y: l.y - origin.top, w: l.w, h: l.h }));
@@ -207,8 +213,8 @@ export class BrushAnnotationImpl implements BrushAnnotation {
     if (!this.built || this.removed) return;
     // The overlay lives inside the element, so pure translations need no
     // work at all — only element-relative geometry changes matter.
-    const lines = this.measureLines();
-    if (rectsEqual(this.toRelative(lines), this.lastRelativeLines)) return;
+    const relative = this.measured(() => this.toRelative(this.measureLines()));
+    if (rectsEqual(relative, this.lastRelativeLines)) return;
     this.rebuildPreservingProgress();
   }
 
@@ -232,92 +238,99 @@ export class BrushAnnotationImpl implements BrushAnnotation {
     const config = this.config;
     const dpr = Math.max(1, window.devicePixelRatio || 1);
 
-    const viewportLines = this.measureLines();
-    this.lastRelativeLines = this.toRelative(viewportLines);
-    if (viewportLines.length === 0) return;
+    // Everything that reads layout happens inside one `measure` hook call, so
+    // a host can neutralize ancestor transforms once per build.
+    const measured = this.measured(() => {
+      const viewportLines = this.measureLines();
+      this.lastRelativeLines = this.toRelative(viewportLines);
+      if (viewportLines.length === 0) return null;
 
-    const cs = getComputedStyle(el);
-    const fontSize = parseFloat(cs.fontSize) || 16;
-    const lineHeight = viewportLines[0].h || fontSize * 1.2;
+      const cs = getComputedStyle(el);
+      const fontSize = parseFloat(cs.fontSize) || 16;
+      const lineHeight = viewportLines[0].h || fontSize * 1.2;
 
-    const padding = resolvePadding(config.padding, config.type === "highlight" ? 1 : 4);
-    const paddedViewport = viewportLines.map((r) => padRect(r, padding));
-    const origin = unionRect(paddedViewport);
+      const padding = resolvePadding(config.padding, config.type === "highlight" ? 1 : 4);
+      const paddedViewport = viewportLines.map((r) => padRect(r, padding));
+      const origin = unionRect(paddedViewport);
 
-    // Word geometry (DOM Range measurement) for line types; falls back silently.
-    let wordBoxes: LineRect[][] | null = null;
-    if (WORD_GEOMETRY_TYPES.has(config.type)) {
-      const raw = measureWordBoxes(el, viewportLines);
-      if (raw) {
-        wordBoxes = raw.map((line) =>
-          line.map((b) => ({ x: b.x - origin.x, y: b.y - origin.y, w: b.w, h: b.h })),
-        );
+      // Word geometry (DOM Range measurement) for line types; falls back silently.
+      let wordBoxes: LineRect[][] | null = null;
+      if (WORD_GEOMETRY_TYPES.has(config.type)) {
+        const raw = measureWordBoxes(el, viewportLines);
+        if (raw) {
+          wordBoxes = raw.map((line) =>
+            line.map((b) => ({ x: b.x - origin.x, y: b.y - origin.y, w: b.w, h: b.h })),
+          );
+        }
       }
-    }
 
-    const resolved = resolveBrush(config.brush, fontSize);
-    const ctx: BuildContext = {
-      lines: paddedViewport.map((r) => ({
-        x: r.x - origin.x,
-        y: r.y - origin.y,
-        w: r.w,
-        h: r.h,
-      })),
-      wordBoxes,
-      config,
-      seed: this.seedValue,
-      fontSize,
-      lineHeight,
-      weightFinal: resolved.weightFinal,
-      strokeWidthEstimate: estimateStrokeWidth(resolved.name, resolved.weightFinal),
-    };
-    const strokes = buildStrokes(ctx);
-    if (strokes.length === 0) return;
+      const resolved = resolveBrush(config.brush, fontSize);
+      const ctx: BuildContext = {
+        lines: paddedViewport.map((r) => ({
+          x: r.x - origin.x,
+          y: r.y - origin.y,
+          w: r.w,
+          h: r.h,
+        })),
+        wordBoxes,
+        config,
+        seed: this.seedValue,
+        fontSize,
+        lineHeight,
+        weightFinal: resolved.weightFinal,
+        strokeWidthEstimate: estimateStrokeWidth(resolved.name, resolved.weightFinal),
+      };
+      const strokes = buildStrokes(ctx);
+      if (strokes.length === 0) return null;
 
-    // Paint that covers the text area (highlight, watercolor wash, hatching)
-    // stacks under the glyphs; pure outline/line annotations stay on top.
-    const under =
-      config.type === "highlight" || !!config.brush?.fill || !!config.brush?.hatch;
-    applyOverlayStacking(this.overlay, el, under, config.zIndex);
+      // Paint that covers the text area (highlight, watercolor wash, hatching)
+      // stacks under the glyphs; pure outline/line annotations stay on top.
+      const under =
+        config.type === "highlight" || !!config.brush?.fill || !!config.brush?.hatch;
+      applyOverlayStacking(this.overlay, el, under, config.zIndex);
 
-    // Exact overlay bounds from the generated geometry (+ mask reach).
-    let x1 = Infinity;
-    let y1 = Infinity;
-    let x2 = -Infinity;
-    let y2 = -Infinity;
-    for (const s of strokes) {
-      const reach = Math.max(s.maskWidth / 2 + 4, 10);
-      for (const p of s.polyline) {
-        x1 = Math.min(x1, p[0] - reach);
-        y1 = Math.min(y1, p[1] - reach);
-        x2 = Math.max(x2, p[0] + reach);
-        y2 = Math.max(y2, p[1] + reach);
+      // Exact overlay bounds from the generated geometry (+ mask reach).
+      let x1 = Infinity;
+      let y1 = Infinity;
+      let x2 = -Infinity;
+      let y2 = -Infinity;
+      for (const s of strokes) {
+        const reach = Math.max(s.maskWidth / 2 + 4, 10);
+        for (const p of s.polyline) {
+          x1 = Math.min(x1, p[0] - reach);
+          y1 = Math.min(y1, p[1] - reach);
+          x2 = Math.max(x2, p[0] + reach);
+          y2 = Math.max(y2, p[1] + reach);
+        }
+        if (s.sweepBox) {
+          x1 = Math.min(x1, s.sweepBox.x);
+          y1 = Math.min(y1, s.sweepBox.y);
+          x2 = Math.max(x2, s.sweepBox.x + s.sweepBox.w);
+          y2 = Math.max(y2, s.sweepBox.y + s.sweepBox.h);
+        }
       }
-      if (s.sweepBox) {
-        x1 = Math.min(x1, s.sweepBox.x);
-        y1 = Math.min(y1, s.sweepBox.y);
-        x2 = Math.max(x2, s.sweepBox.x + s.sweepBox.w);
-        y2 = Math.max(y2, s.sweepBox.y + s.sweepBox.h);
-      }
-    }
 
-    // Shift strokes into overlay-local space.
-    const shiftX = -x1;
-    const shiftY = -y1;
-    for (const s of strokes) {
-      s.polyline = s.polyline.map((p) => [p[0] + shiftX, p[1] + shiftY, p[2]]);
-      if (s.sweepBox) {
-        s.sweepBox = { ...s.sweepBox, x: s.sweepBox.x + shiftX, y: s.sweepBox.y + shiftY };
+      // Shift strokes into overlay-local space.
+      const shiftX = -x1;
+      const shiftY = -y1;
+      for (const s of strokes) {
+        s.polyline = s.polyline.map((p) => [p[0] + shiftX, p[1] + shiftY, p[2]]);
+        if (s.sweepBox) {
+          s.sweepBox = { ...s.sweepBox, x: s.sweepBox.x + shiftX, y: s.sweepBox.y + shiftY };
+        }
       }
-    }
 
-    const widthCss = x2 - x1;
-    const heightCss = y2 - y1;
-    placeOverlay(
-      this.overlay,
-      { x: origin.x + x1, y: origin.y + y1, w: widthCss, h: heightCss },
-      dpr,
-    );
+      const widthCss = x2 - x1;
+      const heightCss = y2 - y1;
+      placeOverlay(
+        this.overlay,
+        { x: origin.x + x1, y: origin.y + y1, w: widthCss, h: heightCss },
+        dpr,
+      );
+      return { strokes, resolved, widthCss, heightCss };
+    });
+    if (!measured) return;
+    const { strokes, resolved, widthCss, heightCss } = measured;
 
     // Paint the finished art on the shared GL surface.
     const layers = getRenderer().render({

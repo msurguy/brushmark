@@ -170,9 +170,21 @@ export function compositeReveal(state: RevealState): void {
 // ---------------------------------------------------------------------------
 
 const dirtyStates = new Set<RevealState>();
-const flushInstalled = new WeakSet<AnimationEngine>();
+/** Engines whose ticker currently has `flush` installed. */
+const installed = new Set<AnimationEngine>();
 
+/**
+ * One composite pass per ticker tick for every dirty annotation. On an idle
+ * tick (nothing dirty) the flush stands down from every engine's ticker, so
+ * no rAF loop is left running once all animations have finished; the next
+ * markDirty() re-arms it.
+ */
 function flush(): void {
+  if (dirtyStates.size === 0) {
+    for (const engine of installed) engine.ticker.remove(flush);
+    installed.clear();
+    return;
+  }
   for (const state of dirtyStates) {
     compositeReveal(state);
     state.dirty = false;
@@ -183,10 +195,19 @@ function flush(): void {
 export function markDirty(state: RevealState): void {
   state.dirty = true;
   dirtyStates.add(state);
-  if (!flushInstalled.has(state.engine)) {
-    flushInstalled.add(state.engine);
+  if (!installed.has(state.engine)) {
+    installed.add(state.engine);
     state.engine.ticker.add(flush);
   }
+}
+
+/**
+ * Composite every dirty annotation right now instead of on the next ticker
+ * tick — for hosts that snapshot the overlay canvas synchronously after a
+ * seek (e.g. cloning it into an <img>).
+ */
+export function flushReveals(): void {
+  flush();
 }
 
 export function unregister(state: RevealState): void {

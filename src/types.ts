@@ -119,6 +119,19 @@ export interface AnimationConfig {
   seed?: number;
   /** 'snap' keeps progress across responsive re-layouts, 'replay' restarts */
   onResize?: "snap" | "replay";
+  /**
+   * Re-measure on element/offsetParent resize, window resize and font load
+   * (default true). Hosts that own the element's layout can turn it off and
+   * call refresh() themselves.
+   */
+  observe?: boolean;
+  /**
+   * Wraps every layout read brushmark performs for this annotation (line
+   * rects, word boxes, overlay placement). Brushmark measures in viewport
+   * px, so a host whose element sits under a CSS-transformed ancestor can
+   * neutralize that transform for the duration of `run`.
+   */
+  measure?: <T>(run: () => T) => T;
 }
 
 export interface AnnotationConfig extends AnimationConfig {

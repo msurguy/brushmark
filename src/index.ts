@@ -3,6 +3,7 @@ import type { AnnotationConfig, BrushAnnotation } from "./types";
 
 export { annotationGroup } from "./core/group";
 export { listBrushes, registerBrush } from "./core/brushes";
+export { flushReveals } from "./core/reveal";
 export {
   setAnimationEngine,
   getAnimationEngine,
